@@ -1,0 +1,281 @@
+import { useContext } from 'react';
+import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Chip, useTheme, useMediaQuery, Tooltip, IconButton, Badge } from '@mui/material';
+import { HealthsoftContext } from '../../context/HealthsoftContext';
+import { useNavigate, useLocation } from 'react-router-dom';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+
+// Icons
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PeopleIcon from '@mui/icons-material/People';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import BadgeIcon from '@mui/icons-material/Badge';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import DevicesIcon from '@mui/icons-material/Devices';
+
+export const Sidebar = () => {
+  const {
+    tickets,
+    closedTickets,
+    resolvedTickets,
+    sidebarOpen,
+    setSidebarOpen,
+    seniors,
+    alarms
+  } = useContext(HealthsoftContext);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const isCollapsed = !sidebarOpen && isDesktop;
+
+  // Count open alerts (priority not rv, and not in closed or resolved)
+  const openCount = tickets.filter(t => !closedTickets.has(t.id) && t.pri !== 'rv' && !resolvedTickets.has(t.id)).length;
+  const openAlarmsCount = alarms.filter(a => !a.resolved).length;
+
+  const sections = [
+    {
+      title: 'Monitor',
+      items: [
+        {
+          id: 'dashboard',
+          text: 'Dashboard',
+          icon: <DashboardIcon sx={{ fontSize: 16 }} />,
+          badge: openCount,
+          badgeType: 'error',
+          action: () => navigate('/dashboard')
+        },
+        {
+          id: 'seniors',
+          text: 'Seniors',
+          icon: <PeopleIcon sx={{ fontSize: 16 }} />,
+          badge: Object.keys(seniors).length,
+          badgeType: 'muted',
+          action: () => navigate('/seniors')
+        },
+        {
+          id: 'alerts',
+          text: 'Alerts',
+          icon: <NotificationsActiveIcon sx={{ fontSize: 16 }} />,
+          badge: openAlarmsCount,
+          badgeType: 'error',
+          action: () => navigate('/alerts')
+        }
+      ]
+    },
+    {
+      title: 'People',
+      items: [
+        {
+          id: 'guardians',
+          text: 'Guardians',
+          icon: <SupervisorAccountIcon sx={{ fontSize: 16 }} />,
+          action: () => navigate('/guardians')
+        },
+        {
+          id: 'monitors',
+          text: 'Monitors',
+          icon: <BadgeIcon sx={{ fontSize: 16 }} />,
+          action: () => navigate('/monitors')
+        },
+        {
+          id: 'users',
+          text: 'Users',
+          icon: <ManageAccountsIcon sx={{ fontSize: 16 }} />,
+          action: () => navigate('/users')
+        }
+      ]
+    },
+    {
+      title: 'Infrastructure',
+      items: [
+        {
+          id: 'devices',
+          text: 'Devices',
+          icon: <DevicesIcon sx={{ fontSize: 16 }} />,
+          action: () => navigate('/devices')
+        },
+        {
+          id: 'system',
+          text: 'System Health',
+          icon: <SettingsSuggestIcon sx={{ fontSize: 16 }} />,
+          action: () => navigate('/system/system')
+        }
+      ]
+    },
+    {
+      title: 'Settings',
+      items: [
+        {
+          id: 'profile',
+          text: 'Profile',
+          icon: <AccountCircleIcon sx={{ fontSize: 16 }} />,
+          action: () => navigate('/profile')
+        }
+      ]
+    }
+  ];
+
+  return (
+    <Box sx={{
+      width: isCollapsed ? 64 : 200,
+      transition: 'width 0.2s ease',
+      bgcolor: '#0E172A',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      borderRight: '1px solid rgba(255,255,255,0.08)'
+    }}>
+      {/* Collapse button inside sidebar */}
+      <Box sx={{ display: 'flex', justifyContent: isCollapsed ? 'center' : 'flex-end', px: isCollapsed ? 0 : 1.5, pt: 1.5 }}>
+        <Tooltip title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"} arrow>
+          <IconButton
+            size="small"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            sx={{
+              color: 'rgba(255,255,255,0.4)',
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              borderRadius: '6px',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                color: '#fff'
+              }
+            }}
+          >
+            {isCollapsed ? <ChevronRightIcon sx={{ fontSize: 18 }} /> : <ChevronLeftIcon sx={{ fontSize: 18 }} />}
+          </IconButton>
+        </Tooltip>
+      </Box>
+      {sections.map((sec) => (
+        <Box key={sec.title} sx={{ mt: isCollapsed ? 1.5 : 2.5, mb: 1, width: '100%' }}>
+          {!isCollapsed ? (
+            <Typography sx={{
+              px: 2,
+              mb: 1,
+              fontSize: '9px',
+              letterSpacing: '1.5px',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.28)',
+              fontWeight: 700
+            }}>
+              {sec.title}
+            </Typography>
+          ) : (
+            <Box sx={{ mx: 1.5, my: 1, borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+          )}
+
+          <List sx={{ p: 0, gap: 0.2, display: 'flex', flexDirection: 'column', width: '100%' }}>
+            {sec.items.map((item) => {
+              // Compute active highlighting based on active path, filters, and sub-selections
+               const itemActive =
+                (item.id === 'dashboard' && location.pathname.startsWith('/dashboard')) ||
+                (item.id === 'seniors' && location.pathname.startsWith('/seniors')) ||
+                (item.id === 'alerts' && location.pathname.startsWith('/alerts')) ||
+                (item.id === 'guardians' && location.pathname.startsWith('/guardians')) ||
+                (item.id === 'monitors' && location.pathname.startsWith('/monitors')) ||
+                (item.id === 'users' && location.pathname.startsWith('/users')) ||
+                (item.id === 'devices' && location.pathname.startsWith('/devices')) ||
+                (item.id === 'system' && location.pathname.startsWith('/system')) ||
+                (item.id === 'profile' && location.pathname.startsWith('/profile'));
+
+              return (
+                <ListItem key={item.text} disablePadding sx={{ width: '100%' }}>
+                  {(() => {
+                    const buttonContent = (
+                      <ListItemButton
+                        onClick={() => {
+                          item.action();
+                          if (!isDesktop) {
+                            setSidebarOpen(false);
+                          }
+                        }}
+                        sx={{
+                          py: 0.8,
+                          px: isCollapsed ? 0 : 2,
+                          width: '100%',
+                          justifyContent: isCollapsed ? 'center' : 'initial',
+                          bgcolor: itemActive ? 'rgba(236,141,32,0.12)' : 'transparent',
+                          color: itemActive ? '#fff' : 'rgba(255,255,255,0.55)',
+                          '&:hover': {
+                            bgcolor: itemActive ? 'rgba(236,141,32,0.18)' : 'rgba(255,255,255,0.05)',
+                            color: '#fff'
+                          }
+                        }}
+                      >
+                        <ListItemIcon sx={{
+                          minWidth: isCollapsed ? 0 : 26,
+                          color: 'inherit',
+                          display: 'flex',
+                          justifyContent: 'center'
+                        }}>
+                          {isCollapsed && item.badge !== undefined && item.badge > 0 ? (
+                            <Badge
+                              badgeContent={item.badge}
+                              color={item.badgeType === 'error' ? 'error' : 'default'}
+                              sx={{
+                                '& .MuiBadge-badge': {
+                                  fontSize: '8px',
+                                  height: 12,
+                                  minWidth: 12,
+                                  padding: '0 2px',
+                                  fontWeight: 700
+                                }
+                              }}
+                            >
+                              {item.icon}
+                            </Badge>
+                          ) : (
+                            item.icon
+                          )}
+                        </ListItemIcon>
+                        {!isCollapsed && (
+                          <ListItemText
+                            primary={
+                              <Typography sx={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+                                {item.text}
+                              </Typography>
+                            }
+                          />
+                        )}
+                        {!isCollapsed && item.badge !== undefined && (
+                          <Chip
+                            label={item.badge}
+                            size="small"
+                            sx={{
+                              height: 16,
+                              minWidth: 20,
+                              fontSize: '9px',
+                              fontWeight: 700,
+                              borderRadius: '6px',
+                              color: '#fff',
+                              bgcolor: item.badgeType === 'error' ? '#C0392B' : 'rgba(255,255,255,0.12)',
+                              '& .MuiChip-label': { px: 0.6 }
+                            }}
+                          />
+                        )}
+                      </ListItemButton>
+                    );
+
+                    return isCollapsed ? (
+                      <Tooltip title={item.text} placement="right" arrow>
+                        {buttonContent}
+                      </Tooltip>
+                    ) : (
+                      buttonContent
+                    );
+                  })()}
+                </ListItem>
+              );
+            })}
+          </List>
+        </Box>
+      ))}
+    </Box>
+  );
+};
