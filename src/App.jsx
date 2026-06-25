@@ -162,97 +162,18 @@ function AppContent() {
 
         {/* Main Panel Frame (Sidebar + Centre + RightPanel) */}
         <Box sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            md: 'auto 1fr',
-            lg: 'auto 1fr auto'
-          },
+          display: 'flex',
           overflow: 'hidden',
           minHeight: 0,
-          position: 'relative'
+          position: 'relative',
+          height: '100%'
         }}>
-          {/* Left edge floating expand handle */}
-          {isAuthenticated && !sidebarOpen && (
-            <Tooltip title="Expand Sidebar" placement="right" arrow>
-              <Box
-                onClick={() => setSidebarOpen(true)}
-                sx={{
-                  position: 'absolute',
-                  left: 0,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 1200,
-                  width: '16px',
-                  height: '64px',
-                  bgcolor: '#0E172A',
-                  color: '#EC8D20',
-                  borderTopRightRadius: '8px',
-                  borderBottomRightRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderLeft: 'none',
-                  display: { xs: 'flex', md: 'none' },
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '2px 0 8px rgba(0,0,0,0.15)',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    width: '22px',
-                    bgcolor: '#1E293B',
-                    color: '#FFFFFF'
-                  }
-                }}
-              >
-                <ChevronRightIcon sx={{ fontSize: 14 }} />
-              </Box>
-            </Tooltip>
-          )}
 
-          {/* Right edge floating expand handle */}
-          {isAuthenticated && !rightPanelOpen && (
-            <Tooltip title="Expand Right Panel" placement="left" arrow>
-              <Box
-                onClick={() => setRightPanelOpen(true)}
-                sx={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 1200,
-                  width: '16px',
-                  height: '64px',
-                  bgcolor: '#FFFFFF',
-                  color: '#EC8D20',
-                  borderTopLeftRadius: '8px',
-                  borderBottomLeftRadius: '8px',
-                  border: '1px solid #D9D9D9',
-                  borderRight: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '-2px 0 8px rgba(0,0,0,0.08)',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    width: '22px',
-                    bgcolor: '#FAF8F6',
-                    color: '#EC8D20'
-                  }
-                }}
-              >
-                <ChevronLeftIcon sx={{ fontSize: 14 }} />
-              </Box>
-            </Tooltip>
-          )}
-          
           {/* Navigation Sidebar */}
           <Box sx={{
             display: { xs: 'none', md: 'block' },
-            width: sidebarOpen ? '200px' : '64px',
-            transition: 'width 0.2s ease',
+            flexShrink: 0,
             height: '100%',
-            minHeight: 0,
             overflow: 'hidden'
           }}>
             <Sidebar />
@@ -260,11 +181,14 @@ function AppContent() {
 
           {/* Centre tab-views container */}
           <Box sx={{
+            flex: 1,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
             height: '100%',
-            minHeight: 0
+            minHeight: 0,
+            transition: 'padding-right 0.18s ease',
+            pr: { lg: rightPanelOpen ? '280px' : 0 }
           }}>
             
             {/* Tab selection bar */}
@@ -325,18 +249,58 @@ function AppContent() {
 
           </Box>
 
-          {/* Right Information Panel */}
+          {/* Right Information Panel — absolute positioned, slides in/out with GPU translateX */}
           <Box sx={{
-            display: { xs: 'none', lg: 'block' },
-            width: rightPanelOpen ? '280px' : '0px',
-            borderLeft: rightPanelOpen ? '1px solid #D9D9D9' : 'none',
-            transition: 'width 0.2s ease, border-left 0.2s ease',
-            height: '100%',
-            minHeight: 0,
+            display: { xs: 'none', lg: 'flex' },
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: '280px',
+            zIndex: 10,
+            flexDirection: 'column',
+            borderLeft: '1px solid #D9D9D9',
+            bgcolor: 'background.paper',
+            transform: rightPanelOpen ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform',
             overflow: 'hidden'
           }}>
             <RightPanel />
           </Box>
+
+          {/* Right edge floating tab to re-open the panel */}
+          {!rightPanelOpen && (
+            <Tooltip title="Open Panel" placement="left" arrow>
+              <Box
+                onClick={() => setRightPanelOpen(true)}
+                sx={{
+                  display: { xs: 'none', lg: 'flex' },
+                  position: 'absolute',
+                  right: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 11,
+                  width: 16,
+                  height: 64,
+                  bgcolor: '#FFFFFF',
+                  color: '#EC8D20',
+                  borderTopLeftRadius: 8,
+                  borderBottomLeftRadius: 8,
+                  border: '1px solid #D9D9D9',
+                  borderRight: 'none',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '-2px 0 8px rgba(0,0,0,0.08)',
+                  transition: 'width 0.15s ease',
+                  '&:hover': { width: 22, bgcolor: '#FAF8F6' }
+                }}
+              >
+                <ChevronLeftIcon sx={{ fontSize: 14 }} />
+              </Box>
+            </Tooltip>
+          )}
 
         </Box>
 
