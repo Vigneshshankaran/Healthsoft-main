@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box,
   Typography,
@@ -40,6 +40,20 @@ export const Locations = () => {
   const [isMock, setIsMock] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
+  const [activeId, setActiveId] = useState(null);
+
+  const mapRef = useRef(null);          // Leaflet map instance
+  const markerRefs = useRef({});        // id -> CircleMarker layer
+
+  // Pan/zoom the map to a device and open its popup (clicked from the table).
+  const focusDevice = (r) => {
+    if (r.lat == null || r.lng == null) return;
+    setActiveId(r.id);
+    const map = mapRef.current;
+    if (map) map.flyTo([r.lat, r.lng], 16, { duration: 0.8 });
+    const marker = markerRefs.current[r.id];
+    if (marker) marker.openPopup();
+  };
 
   useEffect(() => {
     fetchLocations();
@@ -117,17 +131,21 @@ export const Locations = () => {
 
         {/* Map */}
         <Box sx={{ height: 420, borderRadius: "12px", overflow: "hidden", border: "1px solid #EAE5E0" }}>
-          <MapContainer center={center} zoom={12} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
+          <MapContainer ref={mapRef} center={center} zoom={12} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {rows.map((r) => (
+            {rows.map((r) => {
+              const active = r.id === activeId;
+              return (
               <CircleMarker
                 key={r.id}
+                ref={(layer) => { if (layer) markerRefs.current[r.id] = layer; }}
                 center={[r.lat, r.lng]}
-                radius={9}
-                pathOptions={{ color: "#fff", weight: 2, fillColor: TYPE_COLOR[r.type] || TYPE_COLOR.UNKNOWN, fillOpacity: 0.9 }}
+                radius={active ? 13 : 9}
+                eventHandlers={{ click: () => setActiveId(r.id) }}
+                pathOptions={{ color: active ? "#1A0E07" : "#fff", weight: active ? 3 : 2, fillColor: TYPE_COLOR[r.type] || TYPE_COLOR.UNKNOWN, fillOpacity: 0.9 }}
               >
                 <Popup>
                   <Box sx={{ minWidth: 160 }}>
@@ -143,7 +161,8 @@ export const Locations = () => {
                   </Box>
                 </Popup>
               </CircleMarker>
-            ))}
+              );
+            })}
           </MapContainer>
         </Box>
 
@@ -168,9 +187,19 @@ export const Locations = () => {
                 </TableRow>
               ) : (
                 rows.map((r) => (
-                  <TableRow key={r.id} sx={{ "&:hover": { backgroundColor: "#FCFAF8" } }}>
+                  <TableRow
+                    key={r.id}
+                    selected={r.id === activeId}
+                    sx={{ "&:hover": { backgroundColor: "#FCFAF8" }, "&.Mui-selected": { backgroundColor: "#FFF4EC" }, "&.Mui-selected:hover": { backgroundColor: "#FFEADB" } }}
+                  >
                     <TableCell sx={{ py: 1.75 }}>
-                      <Typography sx={{ fontWeight: 650, color: "#1A0E07", fontSize: "0.9rem" }}>{r.name}</Typography>
+                      <Typography
+                        onClick={() => focusDevice(r)}
+                        title="Show on map"
+                        sx={{ fontWeight: 650, color: "#D45529", fontSize: "0.9rem", cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
+                      >
+                        {r.name}
+                      </Typography>
                       <Typography variant="body2" sx={{ color: "#8C7E76", fontSize: "0.75rem" }}>IMEI {r.imei}</Typography>
                     </TableCell>
                     <TableCell sx={{ py: 1.75 }}>
