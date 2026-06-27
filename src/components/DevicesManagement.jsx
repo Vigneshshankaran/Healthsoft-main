@@ -93,9 +93,8 @@ export const DevicesManagement = ({ activeSubTab }) => {
   // Valid device types from GET /v1/devices/types (PENDANT, WATCH, ...)
   const [deviceTypeOptions, setDeviceTypeOptions] = useState([]);
 
-  // Edit Device dialog state. There is no dedicated update endpoint, so Save
-  // re-submits to POST /v1/devices/register with the SAME imei/identifier
-  // (backend upserts by device identifier). IMEI/Identifier stay read-only.
+  // Edit Device dialog state. Save calls POST /v1/devices/update/{deviceUUID}
+  // with a DeviceRegistrationRequest body. IMEI/Identifier stay read-only.
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
   const [editForm, setEditForm] = useState(null);
@@ -299,7 +298,7 @@ export const DevicesManagement = ({ activeSubTab }) => {
     setEditForm(null);
   };
 
-  // Save edits via register-upsert (same imei/identifier → updates the record).
+  // Save edits via POST /v1/devices/update/{deviceUUID}.
   const handleUpdateDevice = () => {
     if (!editForm) return;
     if (!editForm.deviceName.trim()) {
@@ -325,7 +324,8 @@ export const DevicesManagement = ({ activeSubTab }) => {
       imei: editForm.imei,
     };
     setEditSaving(true);
-    DeviceService.registerDevice(payload)
+    // POST /v1/devices/update/{deviceUUID} with a DeviceRegistrationRequest body
+    DeviceService.updateDevice(editForm.id, payload)
       .then(() => {
         notify('Device updated successfully.', 'success');
         fetchDevices();

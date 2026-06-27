@@ -179,6 +179,10 @@ export const DeviceService = {
   registerDevice: (body) =>
     request('/v1/devices/register', { method: 'POST', body, skipAuth: true }),
 
+  // Update an existing device (body: DeviceRegistrationRequest)
+  updateDevice: (deviceUUID, body) =>
+    client.post(`/v1/devices/update/${deviceUUID}`, body),
+
   rotateDeviceCredentials: (deviceUUID) =>
     client.post(`/v1/devices/${deviceUUID}/credentials/rotate`),
 
