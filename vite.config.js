@@ -4,6 +4,14 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Force a single React instance — react-leaflet/@react-leaflet/core otherwise
+  // get a separate copy under Vite's dep optimizer, causing "Invalid hook call".
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react/jsx-runtime', 'leaflet', 'react-leaflet', '@react-leaflet/core'],
+  },
   server: {
     port: 4200,
     strictPort: false,

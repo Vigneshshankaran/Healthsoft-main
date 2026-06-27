@@ -170,6 +170,26 @@ let mockAlarms = [
 ];
 
 // --- Request Router Interceptor ---
+// Active devices + their last known GPS location (mirrors GET /v1/admin/eligible-seniors/device-locations)
+let mockDeviceLocations = [
+  {
+    device: { id: "mock-dev-1", deviceIdentifier: "7510160", imei: "861045085125576", deviceName: "Meenakshi's Pendant", status: "ACTIVE", deviceType: "PENDANT", deviceTypeId: "782", model: "EV07BA", batteryLevel: 78, networkType: "4G", lastSeen: 1781774785000 },
+    deviceLocation: { id: 1, ident: "861045085125576", "device.name": "Meenakshi's Pendant", "position.latitude": 13.0827, "position.longitude": 80.2707, "position.satellites": 9, "position.speed": 0, timestamp: 1781774785, "server.timestamp": 1781774811.5 },
+  },
+  {
+    device: { id: "mock-dev-2", deviceIdentifier: "7958461", imei: "861045082850739", deviceName: "Suresh Wrist Band", status: "ACTIVE", deviceType: "WRIST_BAND", deviceTypeId: "782", model: "HG-200", batteryLevel: 100, networkType: "4G", lastSeen: 1780306036000 },
+    deviceLocation: { id: 2, ident: "861045082850739", "device.name": "Suresh Wrist Band", "position.latitude": 12.997235, "position.longitude": 80.260174, "position.satellites": 10, "position.speed": 1, timestamp: 1780306036, "server.timestamp": 1780306039.2 },
+  },
+  {
+    device: { id: "mock-dev-3", deviceIdentifier: "8378454", imei: "862596080697380", deviceName: "Ward-A Watch", status: "ACTIVE", deviceType: "WATCH", deviceTypeId: "782", model: "SW-10", batteryLevel: 42, networkType: "4G", lastSeen: 1782388254000 },
+    deviceLocation: { id: 3, ident: "862596080697380", "device.name": "Ward-A Watch", "position.latitude": 13.0674, "position.longitude": 80.2376, "position.satellites": 9, "position.speed": 0, timestamp: 1781594896, "server.timestamp": 1781607995.3 },
+  },
+  {
+    device: { id: "mock-dev-4", deviceIdentifier: "8378565", imei: "862596085917791", deviceName: "Clinic Pill Dispenser", status: "ACTIVE", deviceType: "PILL_DISPENSER", deviceTypeId: "782", model: "KP-20", batteryLevel: 12, networkType: "4G", lastSeen: 1782372555000 },
+    deviceLocation: { id: 4, ident: "862596085917791", "device.name": "Clinic Pill Dispenser", "position.latitude": 12.9915, "position.longitude": 80.2337, "position.satellites": 8, "position.speed": 0, timestamp: 1781863809, "server.timestamp": 1781863811.3 },
+  },
+];
+
 export function handleMockRequest(path, options) {
   const method = (options.method || "GET").toUpperCase();
   const body = options.body ? (typeof options.body === "string" ? JSON.parse(options.body) : options.body) : null;
@@ -435,6 +455,31 @@ export function handleMockRequest(path, options) {
         // --- ACTUATOR HEALTH ---
         if (path.startsWith("/v1/actuator/health")) {
           resolve({ status: "UP" });
+          return;
+        }
+
+        // --- DEVICE REGISTRATION LOOKUPS ---
+        if (path === "/v1/devices/types") {
+          resolve(["PENDANT", "WRIST_BAND", "WATCH", "PILL_DISPENSER", "UNKNOWN"]);
+          return;
+        }
+        if (path === "/v1/devices/network-types") {
+          resolve(["4G"]);
+          return;
+        }
+
+        // --- DEVICE LOCATIONS (eligible seniors) ---
+        if (path === "/v1/admin/eligible-seniors/device-locations") {
+          resolve(mockDeviceLocations);
+          return;
+        }
+
+        // --- DEVICES BY TYPE ---
+        if (path.startsWith("/v1/admin/devices/")) {
+          const type = decodeURIComponent(path.split("/").pop());
+          resolve(mockDeviceLocations
+            .map(r => r.device)
+            .filter(d => type ? d.deviceType === type : true));
           return;
         }
 

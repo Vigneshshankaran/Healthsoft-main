@@ -157,10 +157,24 @@ export const DashboardService = {
     client.get('/v1/monitor-dashboard/mapped-seniors'),
 };
 
+// Device type enum — values returned by GET /v1/devices/types and accepted by
+// GET /v1/admin/devices/{deviceType}.
+export const DeviceType = {
+  PENDANT: 'PENDANT',
+  WRIST_BAND: 'WRIST_BAND',
+  WATCH: 'WATCH',
+  PILL_DISPENSER: 'PILL_DISPENSER',
+  UNKNOWN: 'UNKNOWN',
+};
+
 // 7. Device Registration Services
 export const DeviceService = {
   getDeviceNetworkTypes: () =>
     client.get('/v1/devices/network-types'),
+
+  // Valid device types for registration → e.g. ["PENDANT","WATCH",...]
+  getDeviceTypes: () =>
+    client.get('/v1/devices/types'),
 
   registerDevice: (body) =>
     request('/v1/devices/register', { method: 'POST', body, skipAuth: true }),
@@ -319,6 +333,14 @@ export const AdminService = {
 
   adminGetDevices: () =>
     client.get('/v1/admin/devices'),
+
+  // Devices filtered by type (deviceType ∈ DeviceType) → array of device objects
+  adminGetDevicesByType: (deviceType) =>
+    client.get(`/v1/admin/devices/${deviceType}`),
+
+  // Active devices + their last known GPS location → array of { device, deviceLocation }
+  adminGetEligibleSeniorDeviceLocations: () =>
+    client.get('/v1/admin/eligible-seniors/device-locations'),
 
   adminGetAssignments: () =>
     client.get('/v1/admin/assignments'),

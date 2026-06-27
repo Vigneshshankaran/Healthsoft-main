@@ -15,6 +15,8 @@ import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import BadgeIcon from '@mui/icons-material/Badge';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import DevicesIcon from '@mui/icons-material/Devices';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import CategoryIcon from '@mui/icons-material/Category';
 
 export const Sidebar = () => {
   const {
@@ -100,6 +102,18 @@ export const Sidebar = () => {
           action: () => navigate('/devices')
         },
         {
+          id: 'locations',
+          text: 'Locations',
+          icon: <LocationOnIcon sx={{ fontSize: 16 }} />,
+          action: () => navigate('/locations')
+        },
+        {
+          id: 'device-types',
+          text: 'Device Types',
+          icon: <CategoryIcon sx={{ fontSize: 16 }} />,
+          action: () => navigate('/device-types')
+        },
+        {
           id: 'system',
           text: 'System Health',
           icon: <SettingsSuggestIcon sx={{ fontSize: 16 }} />,
@@ -181,6 +195,8 @@ export const Sidebar = () => {
                 (item.id === 'monitors' && location.pathname.startsWith('/monitors')) ||
                 (item.id === 'users' && location.pathname.startsWith('/users')) ||
                 (item.id === 'devices' && location.pathname.startsWith('/devices')) ||
+                (item.id === 'locations' && location.pathname.startsWith('/locations')) ||
+                (item.id === 'device-types' && location.pathname.startsWith('/device-types')) ||
                 (item.id === 'system' && location.pathname.startsWith('/system')) ||
                 (item.id === 'profile' && location.pathname.startsWith('/profile'));
 

@@ -11,6 +11,8 @@ import { Guardians } from './pages/Guardians';
 import { Monitors } from './pages/Monitors';
 import { Alerts } from './pages/Alerts';
 import { Users } from './pages/Users';
+import { Locations } from './pages/Locations';
+import { DeviceTypes } from './pages/DeviceTypes';
 import { Profile } from './pages/Profile';
 import { Login } from './pages/Login';
 import { ConfirmModal } from './components/ui/ConfirmModal';
@@ -70,6 +72,12 @@ function AppContent() {
   } else if (location.pathname.startsWith('/users')) {
     activeTab = 'users';
     tabList = [{ id: 'users', label: 'Staff User Registry', path: '/users' }];
+  } else if (location.pathname.startsWith('/locations')) {
+    activeTab = 'locations';
+    tabList = [{ id: 'locations', label: 'Device Locations', path: '/locations' }];
+  } else if (location.pathname.startsWith('/device-types')) {
+    activeTab = 'device-types';
+    tabList = [{ id: 'device-types', label: 'Devices by Type', path: '/device-types' }];
   } else if (location.pathname.startsWith('/profile')) {
     activeTab = 'profile';
     tabList = [{ id: 'profile', label: 'Operator Profile', path: '/profile' }];
@@ -243,6 +251,8 @@ function AppContent() {
                 <Route path="/guardians" element={<Guardians />} />
                 <Route path="/monitors" element={<Monitors />} />
                 <Route path="/users" element={<Users />} />
+                <Route path="/locations" element={<Locations />} />
+                <Route path="/device-types" element={<DeviceTypes />} />
                 <Route path="/profile" element={<Profile />} />
               </Routes>
             </Box>

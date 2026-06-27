@@ -26,6 +26,7 @@ import {
   Divider,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AddIcon from '@mui/icons-material/Add';
 import BoltIcon from '@mui/icons-material/Bolt';
@@ -88,6 +89,16 @@ export const DevicesManagement = ({ activeSubTab }) => {
   const [newDeviceFirmware, setNewDeviceFirmware] = useState('');
   const [newDeviceNetwork, setNewDeviceNetwork] = useState('');
   const [showCustomNetwork, setShowCustomNetwork] = useState(false);
+  const [newDeviceType, setNewDeviceType] = useState('');
+  // Valid device types from GET /v1/devices/types (PENDANT, WATCH, ...)
+  const [deviceTypeOptions, setDeviceTypeOptions] = useState([]);
+
+  // Edit Device dialog state. There is no dedicated update endpoint, so Save
+  // re-submits to POST /v1/devices/register with the SAME imei/identifier
+  // (backend upserts by device identifier). IMEI/Identifier stay read-only.
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editForm, setEditForm] = useState(null);
 
   // Close Register Device Dialog & Reset State
   const handleCloseRegisterDialog = () => {
@@ -100,6 +111,7 @@ export const DevicesManagement = ({ activeSubTab }) => {
     setNewDeviceMacAddress('');
     setNewDeviceFirmware('');
     setNewDeviceNetwork('');
+    setNewDeviceType('');
   };
 
   // Page load / error state
@@ -111,6 +123,10 @@ export const DevicesManagement = ({ activeSubTab }) => {
     fetchDevices();
     fetchAssignments();
     fetchSeniors();
+    // Valid device types for the Register dialog dropdown
+    DeviceService.getDeviceTypes()
+      .then((res) => setDeviceTypeOptions(Array.isArray(res) ? res : []))
+      .catch((err) => console.warn('Failed to fetch device types from API:', err));
   }, []);
 
   const fetchSeniors = () => {
@@ -165,6 +181,10 @@ export const DevicesManagement = ({ activeSubTab }) => {
               battery: d.batteryLevel !== null && d.batteryLevel !== undefined ? `${d.batteryLevel}%` : '—',
               deviceType: d.deviceType || d.type || undefined,
               deviceTypeId: d.deviceTypeId ? String(d.deviceTypeId) : undefined,
+              // raw fields preserved for the Edit dialog's register-upsert
+              mac: d.mac ?? null,
+              iccid: d.iccid ?? null,
+              module: d.module ?? null,
             };
           });
           setDevices(list);
@@ -220,6 +240,10 @@ export const DevicesManagement = ({ activeSubTab }) => {
       notify('Please fill in all required fields: IMEI, Identifier, and Name.', 'error');
       return;
     }
+    if (!newDeviceType) {
+      notify('Please select a device type.', 'error');
+      return;
+    }
 
     const payload = {
       deviceIdentifier: newDeviceIdentifier.trim(),
@@ -229,7 +253,8 @@ export const DevicesManagement = ({ activeSubTab }) => {
       mac: newDeviceMacAddress.trim() || null,
       model: newDeviceModel.trim() || undefined,
       deviceTypeId: '782',
-      deviceType: 'EV07BA',
+      // Must be a valid DeviceType (PENDANT, WATCH, ...) — not a model string.
+      deviceType: newDeviceType,
       firmwareVersion: newDeviceFirmware.trim() || undefined,
       networkType: newDeviceNetwork.trim() || '4G',
       serverTimestamp: Date.now(),
@@ -245,6 +270,71 @@ export const DevicesManagement = ({ activeSubTab }) => {
       .catch((err) => {
         console.error('Failed to register device in API:', err);
         notify(`Registration failed: ${err?.message || 'Unknown error from server'}`, 'error');
+      });
+  };
+
+  // ─── Edit Device ────────────────────────────────────────────────────────
+  // Prefill the form from the row and open the dialog.
+  const handleStartEditDevice = (device) => {
+    setEditForm({
+      id: device.id,
+      imei: device.imei !== '—' ? device.imei : '',
+      deviceIdentifier: device.identifier !== '—' ? device.identifier : '',
+      deviceName: device.name !== 'Unnamed Device' ? device.name : '',
+      deviceType: device.deviceType || '',
+      model: device.model !== '—' ? device.model : '',
+      mac: device.mac || '',
+      firmwareVersion: device.firmware !== '—' ? device.firmware : '',
+      networkType: device.network !== '—' ? device.network : '',
+      deviceTypeId: device.deviceTypeId || '782',
+      module: device.module || '',
+      iccid: device.iccid || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setEditSaving(false);
+    setEditForm(null);
+  };
+
+  // Save edits via register-upsert (same imei/identifier → updates the record).
+  const handleUpdateDevice = () => {
+    if (!editForm) return;
+    if (!editForm.deviceName.trim()) {
+      notify('Device name is required.', 'error');
+      return;
+    }
+    if (!editForm.deviceType) {
+      notify('Please select a device type.', 'error');
+      return;
+    }
+    const payload = {
+      deviceIdentifier: editForm.deviceIdentifier,
+      deviceName: editForm.deviceName.trim(),
+      module: editForm.module || undefined,
+      iccid: editForm.iccid || '',
+      mac: editForm.mac.trim() || null,
+      model: editForm.model.trim() || undefined,
+      deviceTypeId: editForm.deviceTypeId,
+      deviceType: editForm.deviceType,
+      firmwareVersion: editForm.firmwareVersion.trim() || undefined,
+      networkType: editForm.networkType.trim() || '4G',
+      serverTimestamp: Date.now(),
+      imei: editForm.imei,
+    };
+    setEditSaving(true);
+    DeviceService.registerDevice(payload)
+      .then(() => {
+        notify('Device updated successfully.', 'success');
+        fetchDevices();
+        handleCloseEditDialog();
+      })
+      .catch((err) => {
+        console.error('Failed to update device in API:', err);
+        notify(`Update failed: ${err?.message || 'Unknown error from server'}`, 'error');
+        setEditSaving(false);
       });
   };
 
@@ -612,6 +702,25 @@ export const DevicesManagement = ({ activeSubTab }) => {
                           </TableCell>
                           <TableCell sx={{ py: 1.75 }}>
                             <Box sx={{ display: 'flex', gap: 1 }}>
+                              <IconButton
+                                size="small"
+                                title="Edit device"
+                                onClick={() => handleStartEditDevice(device)}
+                                sx={{
+                                  color: 'text.primary',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  borderRadius: '6px',
+                                  p: 0.75,
+                                  '&:hover': {
+                                    backgroundColor: 'action.hover',
+                                    color: 'primary.main',
+                                    borderColor: 'primary.main',
+                                  },
+                                }}
+                              >
+                                <EditIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
                               <IconButton
                                 size="small"
                                 title="Rotate device credentials"
@@ -1252,6 +1361,32 @@ export const DevicesManagement = ({ activeSubTab }) => {
                 />
               </Box>
 
+              {/* Row 3b: Device Type * */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography sx={{ width: 140, fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>
+                  Device Type *
+                </Typography>
+                <Select
+                  value={newDeviceType}
+                  onChange={(e) => setNewDeviceType(e.target.value)}
+                  size="small"
+                  fullWidth
+                  displayEmpty
+                  sx={{
+                    borderRadius: '6px',
+                    backgroundColor: '#FFFFFF',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' },
+                  }}
+                >
+                  <MenuItem value="">Select device type...</MenuItem>
+                  {deviceTypeOptions.map((t) => (
+                    <MenuItem key={t} value={t}>{t}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+
               {/* Row 4: Model */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Typography sx={{ width: 140, fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>
@@ -1428,6 +1563,90 @@ export const DevicesManagement = ({ activeSubTab }) => {
               }}
             >
               Register
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* ─── Edit Device dialog (saves via register-upsert) ────────────────── */}
+        <Dialog open={editDialogOpen} onClose={handleCloseEditDialog} maxWidth="sm" fullWidth>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 3, pt: 2, pb: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 750, color: 'text.primary' }}>
+              Edit Device
+            </Typography>
+            <IconButton onClick={handleCloseEditDialog} size="small" sx={{ color: 'text.secondary' }}>
+              <CloseIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          </Box>
+          <DialogContent sx={{ px: 3, py: 2 }}>
+            {editForm && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* IMEI — read-only (record key) */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography sx={{ width: 140, fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>IMEI</Typography>
+                  <TextField fullWidth size="small" value={editForm.imei} disabled
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
+                </Box>
+                {/* Identifier — read-only (record key) */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography sx={{ width: 140, fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>Identifier</Typography>
+                  <TextField fullWidth size="small" value={editForm.deviceIdentifier} disabled
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
+                </Box>
+                {/* Name * */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography sx={{ width: 140, fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>Name *</Typography>
+                  <TextField fullWidth size="small" value={editForm.deviceName}
+                    onChange={(e) => setEditForm((p) => ({ ...p, deviceName: e.target.value }))}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
+                </Box>
+                {/* Device Type * */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography sx={{ width: 140, fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>Device Type *</Typography>
+                  <Select fullWidth size="small" displayEmpty value={editForm.deviceType}
+                    onChange={(e) => setEditForm((p) => ({ ...p, deviceType: e.target.value }))}
+                    sx={{ borderRadius: '6px', backgroundColor: '#FFFFFF' }}>
+                    <MenuItem value="">Select device type...</MenuItem>
+                    {deviceTypeOptions.map((t) => (<MenuItem key={t} value={t}>{t}</MenuItem>))}
+                  </Select>
+                </Box>
+                {/* Model */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography sx={{ width: 140, fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>Model</Typography>
+                  <TextField fullWidth size="small" value={editForm.model}
+                    onChange={(e) => setEditForm((p) => ({ ...p, model: e.target.value }))}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
+                </Box>
+                {/* MAC Address */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography sx={{ width: 140, fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>MAC Address</Typography>
+                  <TextField fullWidth size="small" placeholder="AA:BB:CC:DD:EE:FF" value={editForm.mac}
+                    onChange={(e) => setEditForm((p) => ({ ...p, mac: e.target.value }))}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
+                </Box>
+                {/* Firmware */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography sx={{ width: 140, fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>Firmware</Typography>
+                  <TextField fullWidth size="small" value={editForm.firmwareVersion}
+                    onChange={(e) => setEditForm((p) => ({ ...p, firmwareVersion: e.target.value }))}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
+                </Box>
+                {/* Network */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography sx={{ width: 140, fontSize: '0.875rem', fontWeight: 600, color: 'text.primary' }}>Network</Typography>
+                  <TextField fullWidth size="small" placeholder="e.g. 4G" value={editForm.networkType}
+                    onChange={(e) => setEditForm((p) => ({ ...p, networkType: e.target.value }))}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '6px' } }} />
+                </Box>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 3, pt: 1, gap: 1.5 }}>
+            <Button onClick={handleCloseEditDialog} sx={{ textTransform: 'none', fontWeight: 600, color: 'text.secondary', fontSize: '0.9rem' }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateDevice} variant="contained" disabled={editSaving}
+              sx={{ borderRadius: '8px', px: 3, py: 1, textTransform: 'none', fontWeight: 700, fontSize: '0.9rem' }}>
+              {editSaving ? 'Saving…' : 'Save Changes'}
             </Button>
           </DialogActions>
         </Dialog>
