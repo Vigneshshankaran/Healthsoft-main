@@ -245,7 +245,7 @@ export const Alerts = ({ role }) => {
                 lineHeight: 1.2
               }}
             >
-              System Alerts
+              Alarm Events
             </Typography>
             {isMock && (
               <Chip
@@ -338,32 +338,10 @@ export const Alerts = ({ role }) => {
     /* Sub Tabs Container */
   }
       <Box>
-        <Box sx={{ borderBottom: "1px solid #EAE5E0", mb: 3 }}>
-          <Tabs
-    value={activeSubTab}
-    onChange={handleTabChange}
-    textColor="primary"
-    indicatorColor="primary"
-    sx={{
-      "& .MuiTab-root": {
-        fontWeight: 700,
-        fontSize: "13px",
-        minWidth: "auto",
-        px: 3,
-        pb: 1.25,
-        color: "text.secondary"
-      }
-    }}
-  >
-            <Tab label="System Alerts" />
-            <Tab label={`Alarm Events (${logs.length})`} />
-          </Tabs>
-        </Box>
-
         {
-    /* SUBTAB 0: System Alerts View */
+    /* System Alerts view removed — Alarm Events is the only view */
   }
-        {activeSubTab === 0 && <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {false && <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {
     /* Clean filter panel */
   }
@@ -525,9 +503,9 @@ export const Alerts = ({ role }) => {
           </Box>}
 
         {
-    /* SUBTAB 1: Alarm Events */
+    /* Alarm Events */
   }
-        {activeSubTab === 1 && <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {<Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {
     /* Filter controls panel */
   }

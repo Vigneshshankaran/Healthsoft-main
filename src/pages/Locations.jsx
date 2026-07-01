@@ -12,9 +12,29 @@ import {
   Paper,
   Link,
 } from "@mui/material";
-import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { AdminService, isMockActive } from "../api";
+
+// MapContainer only reads center/zoom once (at mount), so when the device rows
+// arrive after the initial render the map never re-frames. This child fits the
+// map to all marker coordinates whenever the rows change.
+const FitToMarkers = ({ points }) => {
+  const map = useMap();
+  // Signature of the coordinate set — re-fit only when the points actually
+  // change, not on every parent re-render (which would fight click-to-focus).
+  const sig = points.map((p) => p.join(",")).join("|");
+  useEffect(() => {
+    if (!points.length) return;
+    if (points.length === 1) {
+      map.setView(points[0], 15);
+    } else {
+      map.fitBounds(points, { padding: [40, 40] });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, sig]);
+  return null;
+};
 import { DataState } from "../components/DataState";
 
 // Colour per device type — keeps the map markers and table chips in sync.
@@ -136,6 +156,7 @@ export const Locations = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            <FitToMarkers points={rows.map((r) => [r.lat, r.lng])} />
             {rows.map((r) => {
               const active = r.id === activeId;
               return (

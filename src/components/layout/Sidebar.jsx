@@ -87,6 +87,12 @@ export const Sidebar = () => {
       title: 'People',
       items: [
         {
+          id: 'users',
+          text: 'Users',
+          icon: <ManageAccountsIcon sx={{ fontSize: 16 }} />,
+          action: () => navigate('/users')
+        },
+        {
           id: 'guardians',
           text: 'Guardians',
           icon: <SupervisorAccountIcon sx={{ fontSize: 16 }} />,
@@ -97,12 +103,6 @@ export const Sidebar = () => {
           text: 'Monitors',
           icon: <BadgeIcon sx={{ fontSize: 16 }} />,
           action: () => navigate('/monitors')
-        },
-        {
-          id: 'users',
-          text: 'Users',
-          icon: <ManageAccountsIcon sx={{ fontSize: 16 }} />,
-          action: () => navigate('/users')
         }
       ]
     },
