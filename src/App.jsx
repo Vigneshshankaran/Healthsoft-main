@@ -28,7 +28,7 @@ import {
 } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 function AppContent() {
   const {
@@ -252,7 +252,7 @@ function AppContent() {
                 <Route path="/monitors" element={<Monitors />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/locations" element={<Locations />} />
-                <Route path="/device-types" element={<DeviceTypes />} />
+                <Route path="/device-types/:typeFilter?" element={<DeviceTypes />} />
                 <Route path="/profile" element={<Profile />} />
               </Routes>
             </Box>
@@ -406,9 +406,9 @@ function AppContent() {
 function App() {
   return (
     <HealthsoftProvider>
-      <HashRouter>
+      <BrowserRouter>
         <AppContent />
-      </HashRouter>
+      </BrowserRouter>
     </HealthsoftProvider>
   );
 }

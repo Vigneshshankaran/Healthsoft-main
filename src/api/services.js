@@ -388,3 +388,18 @@ export const ActuatorService = {
   getHealthInternalDetails: () =>
     client.get('/v1/actuator/health/internal/details'),
 };
+
+// 17. CRM Services
+export const CRMService = {
+  getLeads: () =>
+    client.get('/v1/api/crm/leads'),
+
+  getLead: (leadName) =>
+    client.get(`/v1/api/crm/leads/${leadName}`),
+
+  createLead: (body) =>
+    client.post('/v1/api/crm/leads', body),
+
+  updateLead: (leadName, body) =>
+    client.put(`/v1/api/crm/leads/${leadName}`, body),
+};

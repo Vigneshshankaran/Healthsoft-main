@@ -24,7 +24,8 @@ import {
   Dialog,
   DialogContent,
   DialogActions,
-  IconButton
+  IconButton,
+  Autocomplete
 } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import SpeedIcon from "@mui/icons-material/Speed";
@@ -43,6 +44,8 @@ import ErrorIcon from "@mui/icons-material/Error";
 import DeviceHubIcon from "@mui/icons-material/DeviceHub";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import SearchIcon from "@mui/icons-material/Search";
 import { FallAlertModal } from "../components/FallAlertModal";
 import { DataState } from "../components/DataState";
 import { SeniorService, DeviceAssignmentService, AlarmService, ComplianceService, AdminService, MonitorService, VitalService } from "../api";
@@ -52,6 +55,10 @@ export const Seniors = ({ currentUserName, currentUserRole }) => {
   const { toast: notify, selectedSeniorId, setSelectedSeniorId } = useContext(HealthsoftContext);
   const [openFallAlert, setOpenFallAlert] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterRisk, setFilterRisk] = useState("ALL");
+  const [filterGender, setFilterGender] = useState("ALL");
   const [openAddSeniorDialog, setOpenAddSeniorDialog] = useState(false);
   const [newSeniorFirstName, setNewSeniorFirstName] = useState("");
   const [newSeniorLastName, setNewSeniorLastName] = useState("");
@@ -416,6 +423,30 @@ export const Seniors = ({ currentUserName, currentUserRole }) => {
   const filteredSeniorAlerts = seniorAlerts.filter(
     (a) => alertTypeFilter === "ALL" || String(a.type).toLowerCase().includes(alertTypeFilter.toLowerCase())
   );
+  const filteredSeniors = seniorsList.filter((s) => {
+    const nameMatch = s.name ? s.name.toLowerCase().includes(searchQuery.toLowerCase()) : false;
+    const roomMatch = s.room ? s.room.toLowerCase().includes(searchQuery.toLowerCase()) : false;
+    const idMatch = s.residentId ? s.residentId.toLowerCase().includes(searchQuery.toLowerCase()) : false;
+    const searchMatch = searchQuery === "" || nameMatch || roomMatch || idMatch;
+
+    const sFallRisk = String(s.fallRisk || s.fall_risk || "").toUpperCase();
+    const sWanderRisk = String(s.wanderRisk || s.wander_risk || "").toUpperCase();
+    const sCardiacRisk = String(s.cardiacRisk || s.cardiac_risk || "").toUpperCase();
+    const riskMatch =
+      filterRisk === "ALL" ||
+      sFallRisk === filterRisk ||
+      sWanderRisk === filterRisk ||
+      sCardiacRisk === filterRisk;
+
+    const sGender = String(s.gender || "").toUpperCase();
+    const genderMatch =
+      filterGender === "ALL" ||
+      sGender === filterGender ||
+      (filterGender === "MALE" && sGender.startsWith("M")) ||
+      (filterGender === "FEMALE" && sGender.startsWith("F"));
+
+    return searchMatch && riskMatch && genderMatch;
+  });
   const vitalsView = {
     heartRate: latestVitals?.heartRate ?? selectedSenior["latestHeartRate"],
     bp: latestVitals?.bp || selectedSenior["latestBp"],
@@ -534,11 +565,197 @@ export const Seniors = ({ currentUserName, currentUserRole }) => {
       </Box>;
   }
   return <DataState loading={pageLoading} error={pageError} onRetry={loadSeniors}>
-    <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-      {
-    /* 1. Header Banner Panel */
-  }
-      <Card
+    <Box sx={{ width: "100%", height: "100%", bgcolor: "background.default", overflowY: "auto", minWidth: 0 }}>
+      {!isExpanded ? (
+        // ─── DIRECTORY LIST GRID CARD VIEW ───
+        <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+          {/* Header Row */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: "secondary.main", fontFamily: '"Sora", sans-serif' }}>
+                Senior Residents
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                Directory of all active residents in care. Click a card to view detailed health logs.
+              </Typography>
+            </Box>
+            {currentUserRole === "ADMIN" && (
+              <Button
+                variant="contained"
+                onClick={() => setOpenAddSeniorDialog(true)}
+                startIcon={<AddIcon />}
+                sx={{
+                  bgcolor: "#EC8D20",
+                  "&:hover": { bgcolor: "#C77518" },
+                  color: "#FFFFFF",
+                  fontWeight: 700,
+                  borderRadius: "8px"
+                }}
+              >
+                Add Senior
+              </Button>
+            )}
+          </Box>
+
+          {/* Search and Filters Bar */}
+          <Card sx={{ p: 2, display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", boxShadow: "none", border: "1px solid", borderColor: "divider" }}>
+            <TextField
+              placeholder="Search by name, room, or resident ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              size="small"
+              sx={{
+                flex: "1 1 300px",
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                  "& fieldset": { borderColor: "divider" }
+                }
+              }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <SearchIcon sx={{ color: 'text.secondary', fontSize: 20, mr: 0.5 }} />
+                  ),
+                  endAdornment: searchQuery && (
+                    <IconButton size="small" onClick={() => setSearchQuery("")}>
+                      <CloseIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  )
+                }
+              }}
+            />
+            <Select
+              value={filterRisk}
+              onChange={(e) => setFilterRisk(e.target.value)}
+              size="small"
+              sx={{ minWidth: 150, borderRadius: "8px" }}
+            >
+              <MenuItem value="ALL">All Risk Levels</MenuItem>
+              <MenuItem value="HIGH">High Risk</MenuItem>
+              <MenuItem value="MEDIUM">Medium Risk</MenuItem>
+              <MenuItem value="LOW">Low Risk</MenuItem>
+            </Select>
+            <Select
+              value={filterGender}
+              onChange={(e) => setFilterGender(e.target.value)}
+              size="small"
+              sx={{ minWidth: 150, borderRadius: "8px" }}
+            >
+              <MenuItem value="ALL">All Genders</MenuItem>
+              <MenuItem value="MALE">Male</MenuItem>
+              <MenuItem value="FEMALE">Female</MenuItem>
+            </Select>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, ml: "auto" }}>
+              Showing {filteredSeniors.length} of {seniorsList.length} residents
+            </Typography>
+          </Card>
+
+          {/* Directory Table */}
+          {filteredSeniors.length === 0 ? (
+            <Card sx={{ p: 6, textAlign: "center", border: "1px solid #EAE5E0", borderRadius: "8px", boxShadow: "none" }}>
+              <Typography variant="h6" sx={{ color: "text.secondary" }}>
+                No residents found matching your search.
+              </Typography>
+            </Card>
+          ) : (
+            <TableContainer component={Paper} sx={{ border: "1px solid #EAE5E0", borderRadius: "8px", boxShadow: "none", overflow: "hidden" }}>
+              <Table sx={{ minWidth: 650 }}>
+                <TableHead sx={{ bgcolor: "background.default" }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", py: 1.75, fontSize: "11px" }}>RESIDENT NAME</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", py: 1.75, fontSize: "11px" }}>ROOM</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", py: 1.75, fontSize: "11px" }}>AGE &amp; GENDER</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", py: 1.75, fontSize: "11px" }}>FALL RISK</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", py: 1.75, fontSize: "11px" }}>ACTIVE DEVICES</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "text.secondary", py: 1.75, fontSize: "11px" }}>MED COMPLIANCE</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredSeniors.map((s) => {
+                    const initials = s.name ? s.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) : '?';
+                    
+                    let riskColor = "#64748B";
+                    let riskBg = "#F1F5F9";
+                    const upperRisk = String(s.fallRisk || s.fall_risk || "").toUpperCase();
+                    if (upperRisk === "HIGH") {
+                      riskColor = "#DC2626";
+                      riskBg = "#FEE2E2";
+                    } else if (upperRisk === "MEDIUM") {
+                      riskColor = "#D97706";
+                      riskBg = "#FEF3C7";
+                    } else if (upperRisk === "LOW") {
+                      riskColor = "#059669";
+                      riskBg = "#D1FAE5";
+                    }
+
+                    return (
+                      <TableRow
+                        key={s.id}
+                        onClick={() => {
+                          setSelectedSenior(s);
+                          setSelectedSeniorId(s.id);
+                          setIsExpanded(true);
+                        }}
+                        sx={{
+                          cursor: "pointer",
+                          "&:hover": { bgcolor: "#FCFAF8" }
+                        }}
+                      >
+                        <TableCell sx={{ py: 1.5, display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <Avatar
+                            sx={{
+                              bgcolor: "#FEF3C7",
+                              color: "#D97706",
+                              width: 32,
+                              height: 32,
+                              fontSize: "12px",
+                              fontWeight: 800
+                            }}
+                          >
+                            {initials}
+                          </Avatar>
+                          <Typography sx={{ fontWeight: 750, color: "text.primary", fontSize: "13px" }}>
+                            {s.name}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5, fontSize: "13px", fontWeight: 650 }}>{s.room}</TableCell>
+                        <TableCell sx={{ py: 1.5, fontSize: "13px", color: "text.secondary" }}>
+                          {s.age ? `${s.age} yrs` : "—"} · {s.gender}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          {upperRisk && upperRisk !== "—" && (
+                            <Chip
+                              label={s.fallRisk}
+                              size="small"
+                              sx={{
+                                bgcolor: riskBg,
+                                color: riskColor,
+                                fontWeight: 800,
+                                fontSize: "10px",
+                                borderRadius: "4px",
+                                height: 20
+                              }}
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5, fontSize: "13px", color: "text.secondary" }}>
+                          {s.devicesCount > 0 ? `${s.devicesCount} active` : "—"}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5, fontSize: "13px", color: "text.secondary" }}>
+                          {s.medCompliance ? `${s.medCompliance}%` : "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      ) : (
+        // ─── SELECTED RESIDENT DETAILED VIEW ───
+        <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+          <Card
     sx={{
       bgcolor: "#0F172A",
       borderRadius: "12px",
@@ -561,6 +778,25 @@ export const Seniors = ({ currentUserName, currentUserRole }) => {
   >
           {/* Avatar & Basic Details */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
+            {isExpanded && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ArrowBackIcon sx={{ fontSize: 16 }} />}
+                onClick={() => setIsExpanded(false)}
+                sx={{
+                  color: "#FFFFFF",
+                  borderColor: "rgba(255, 255, 255, 0.3)",
+                  mr: 2,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderRadius: "8px",
+                  "&:hover": { borderColor: "#FFFFFF", bgcolor: "rgba(255, 255, 255, 0.08)" }
+                }}
+              >
+                Back
+              </Button>
+            )}
             <Avatar
               sx={{
                 bgcolor: '#FEF3C7',
@@ -581,23 +817,63 @@ export const Seniors = ({ currentUserName, currentUserRole }) => {
               {/* Name row + MOCK chip */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 {seniorsList.length > 1 ? (
-                  <Select
-                    value={selectedSenior.id}
-                    onChange={(e) => {
-                      const found = seniorsList.find((s) => s.id === e.target.value);
-                      if (found) { setSelectedSenior(found); setSelectedSeniorId(found.id); }
+                  <Autocomplete
+                    options={seniorsList}
+                    getOptionLabel={(option) => option.name || ''}
+                    value={selectedSenior}
+                    onChange={(_, newValue) => {
+                      if (newValue) { setSelectedSenior(newValue); setSelectedSeniorId(newValue.id); }
                     }}
+                    disableClearable
+                    openOnFocus
+                    autoHighlight
                     size="small"
-                    sx={{
-                      color: '#FFFFFF', fontWeight: 800, fontSize: '18px',
-                      '.MuiOutlinedInput-notchedOutline': { border: 'none' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                      '.MuiSelect-icon': { color: '#FFFFFF' }, p: 0, ml: -1.5
+                    sx={{ minWidth: 220 }}
+                    componentsProps={{
+                      paper: {
+                        sx: {
+                          borderRadius: '10px',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                          mt: 0.5,
+                        }
+                      }
                     }}
-                  >
-                    {seniorsList.map((s) => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
-                  </Select>
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        variant="outlined"
+                        placeholder="Search senior..."
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            color: '#FFFFFF',
+                            fontWeight: 800,
+                            fontSize: '18px',
+                            border: 'none',
+                            p: 0,
+                            pl: 0,
+                            '.MuiOutlinedInput-notchedOutline': { border: 'none' },
+                            '&:hover .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                          },
+                          '& .MuiInputBase-input': {
+                            color: '#FFFFFF',
+                            fontWeight: 800,
+                            fontSize: '18px',
+                            p: '0 !important',
+                            ml: -1.5,
+                          },
+                          '& .MuiAutocomplete-endAdornment .MuiSvgIcon-root': {
+                            color: '#FFFFFF',
+                          },
+                          '& input::placeholder': { color: 'rgba(255,255,255,0.6)', opacity: 1 },
+                        }}
+                      />
+                    )}
+                    filterOptions={(options, state) => {
+                      const q = state.inputValue.toLowerCase();
+                      return options.filter(o => o.name?.toLowerCase().includes(q));
+                    }}
+                  />
                 ) : (
                   <Typography variant="h5" sx={{ fontWeight: 800, color: '#FFFFFF' }}>
                     {selectedSenior.name || 'Unknown Senior'}
@@ -850,9 +1126,7 @@ export const Seniors = ({ currentUserName, currentUserRole }) => {
     /* 3. Sub-Tabs Views Content */
   }
       <Box>
-        {
-    /* SUBTAB 0: Overview (Demographics & Basic Summary) */
-  }
+        {/* SUBTAB 0: Overview (Demographics & Basic Summary) */}
         {activeSubTab === 0 && <Grid container spacing={3.5}>
             {
     /* Left Demographics */
@@ -1652,7 +1926,9 @@ export const Seniors = ({ currentUserName, currentUserRole }) => {
               </Card>
             </Grid>
           </Grid>}
+        </Box>
       </Box>
+    )}
 
       {
     /* Trigger Dialog Alert Modal — shows the currently selected resident's real data */

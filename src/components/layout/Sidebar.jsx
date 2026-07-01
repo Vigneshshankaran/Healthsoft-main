@@ -1,5 +1,5 @@
-import { useContext } from 'react';
-import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Chip, useTheme, useMediaQuery, Tooltip, IconButton, Badge } from '@mui/material';
+import { useContext, useState, useEffect } from 'react';
+import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Chip, useTheme, useMediaQuery, Tooltip, IconButton, Badge, Collapse } from '@mui/material';
 import { HealthsoftContext } from '../../context/HealthsoftContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -15,8 +15,9 @@ import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import BadgeIcon from '@mui/icons-material/Badge';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import DevicesIcon from '@mui/icons-material/Devices';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import CategoryIcon from '@mui/icons-material/Category';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export const Sidebar = () => {
   const {
@@ -34,6 +35,19 @@ export const Sidebar = () => {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isCollapsed = !sidebarOpen && isDesktop;
+
+  const isDeviceMgmtActive =
+    location.pathname.startsWith('/devices') ||
+    location.pathname.startsWith('/device-types') ||
+    location.pathname.startsWith('/locations');
+
+  const [deviceMgmtOpen, setDeviceMgmtOpen] = useState(isDeviceMgmtActive);
+
+  useEffect(() => {
+    if (isDeviceMgmtActive) {
+      setDeviceMgmtOpen(true);
+    }
+  }, [location.pathname, isDeviceMgmtActive]);
 
   // Count open alerts (priority not rv, and not in closed or resolved)
   const openCount = tickets.filter(t => !closedTickets.has(t.id) && t.pri !== 'rv' && !resolvedTickets.has(t.id)).length;
@@ -96,28 +110,31 @@ export const Sidebar = () => {
       title: 'Infrastructure',
       items: [
         {
-          id: 'devices',
-          text: 'Devices',
+          id: 'device-mgmt',
+          text: 'Device Management',
           icon: <DevicesIcon sx={{ fontSize: 16 }} />,
-          action: () => navigate('/devices')
-        },
-        {
-          id: 'locations',
-          text: 'Locations',
-          icon: <LocationOnIcon sx={{ fontSize: 16 }} />,
-          action: () => navigate('/locations')
-        },
-        {
-          id: 'device-types',
-          text: 'Device Types',
-          icon: <CategoryIcon sx={{ fontSize: 16 }} />,
-          action: () => navigate('/device-types')
+          isGroup: true,
+          subItems: [
+            { id: 'devices', text: 'Devices', action: () => navigate('/devices') },
+            { id: 'pendants', text: 'Pendants', action: () => navigate('/device-types/PENDANT') },
+            { id: 'wrist-bands', text: 'Wrist Bands', action: () => navigate('/device-types/WRIST_BAND') },
+            { id: 'watches', text: 'Watches', action: () => navigate('/device-types/WATCH') },
+            { id: 'dispensers', text: 'Dispensers', action: () => navigate('/device-types/PILL_DISPENSER') },
+            { id: 'unknown-devices', text: 'Unknown Devices', action: () => navigate('/device-types/UNKNOWN') },
+            { id: 'locations', text: 'Locations', action: () => navigate('/locations') }
+          ]
         },
         {
           id: 'system',
           text: 'System Health',
           icon: <SettingsSuggestIcon sx={{ fontSize: 16 }} />,
           action: () => navigate('/system/system')
+        },
+        {
+          id: 'erp',
+          text: 'ERP / Billing',
+          icon: <ReceiptLongIcon sx={{ fontSize: 16 }} />,
+          action: () => navigate('/system/erp')
         }
       ]
     },
@@ -197,8 +214,116 @@ export const Sidebar = () => {
                 (item.id === 'devices' && location.pathname.startsWith('/devices')) ||
                 (item.id === 'locations' && location.pathname.startsWith('/locations')) ||
                 (item.id === 'device-types' && location.pathname.startsWith('/device-types')) ||
-                (item.id === 'system' && location.pathname.startsWith('/system')) ||
+                (item.id === 'system' && (location.pathname === '/system' || location.pathname === '/system/system')) ||
+                (item.id === 'erp' && location.pathname === '/system/erp') ||
                 (item.id === 'profile' && location.pathname.startsWith('/profile'));
+
+              if (item.isGroup) {
+                const handleGroupClick = () => {
+                  if (isCollapsed) {
+                    setSidebarOpen(true);
+                    setDeviceMgmtOpen(true);
+                  } else {
+                    setDeviceMgmtOpen(!deviceMgmtOpen);
+                  }
+                };
+
+                const groupButtonContent = (
+                  <ListItemButton
+                    onClick={handleGroupClick}
+                    sx={{
+                      py: 0.8,
+                      px: isCollapsed ? 0 : 2,
+                      width: '100%',
+                      justifyContent: isCollapsed ? 'center' : 'initial',
+                      color: isDeviceMgmtActive ? '#fff' : 'rgba(255,255,255,0.55)',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.05)',
+                        color: '#fff'
+                      }
+                    }}
+                  >
+                    <ListItemIcon sx={{
+                      minWidth: isCollapsed ? 0 : 26,
+                      color: 'inherit',
+                      display: 'flex',
+                      justifyContent: 'center'
+                    }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    {!isCollapsed && (
+                      <ListItemText
+                        primary={
+                          <Typography sx={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+                            {item.text}
+                          </Typography>
+                        }
+                      />
+                    )}
+                    {!isCollapsed && (deviceMgmtOpen ? <ExpandLessIcon sx={{ fontSize: 16 }} /> : <ExpandMoreIcon sx={{ fontSize: 16 }} />)}
+                  </ListItemButton>
+                );
+
+                return (
+                  <Box key={item.text} sx={{ width: '100%' }}>
+                    <ListItem disablePadding sx={{ width: '100%' }}>
+                      {isCollapsed ? (
+                        <Tooltip title={item.text} placement="right" arrow>
+                          {groupButtonContent}
+                        </Tooltip>
+                      ) : (
+                        groupButtonContent
+                      )}
+                    </ListItem>
+                    <Collapse in={deviceMgmtOpen && !isCollapsed} timeout="auto" unmountOnExit sx={{ width: '100%' }}>
+                      <List component="div" disablePadding sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 0.2 }}>
+                        {item.subItems.map((sub) => {
+                          const subActive =
+                            (sub.id === 'devices' && location.pathname.startsWith('/devices')) ||
+                            (sub.id === 'pendants' && location.pathname === '/device-types/PENDANT') ||
+                            (sub.id === 'wrist-bands' && location.pathname === '/device-types/WRIST_BAND') ||
+                            (sub.id === 'watches' && location.pathname === '/device-types/WATCH') ||
+                            (sub.id === 'dispensers' && location.pathname === '/device-types/PILL_DISPENSER') ||
+                            (sub.id === 'unknown-devices' && location.pathname === '/device-types/UNKNOWN') ||
+                            (sub.id === 'locations' && location.pathname.startsWith('/locations'));
+
+                          return (
+                            <ListItemButton
+                              key={sub.text}
+                              onClick={() => {
+                                sub.action();
+                                if (!isDesktop) {
+                                  setSidebarOpen(false);
+                                }
+                              }}
+                              sx={{
+                                py: 0.6,
+                                pl: 4,
+                                pr: 2,
+                                width: '100%',
+                                bgcolor: subActive ? 'rgba(236,141,32,0.12)' : 'transparent',
+                                color: subActive ? '#fff' : 'rgba(255,255,255,0.45)',
+                                '&:hover': {
+                                  bgcolor: subActive ? 'rgba(236,141,32,0.18)' : 'rgba(255,255,255,0.03)',
+                                  color: '#fff'
+                                }
+                              }}
+                            >
+                              <ListItemText
+                                primary={
+                                  <Typography sx={{ fontSize: '11px', fontWeight: subActive ? 700 : 500, fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+                                    {sub.text}
+                                  </Typography>
+                                }
+                              />
+                            </ListItemButton>
+                          );
+                        })}
+                      </List>
+                    </Collapse>
+                  </Box>
+                );
+              }
 
               return (
                 <ListItem key={item.text} disablePadding sx={{ width: '100%' }}>

@@ -481,13 +481,14 @@ export const Guardians = () => {
       <Dialog
     open={openLinkDialog}
     onClose={handleCloseLinkDialog}
-    maxWidth="sm"
+    maxWidth="lg"
     fullWidth
     slotProps={{
       paper: {
         sx: {
-          borderRadius: "14px",
-          overflow: "hidden"
+          borderRadius: "18px",
+          overflow: "hidden",
+          minHeight: "460px"
         }
       }
     }}
@@ -500,18 +501,18 @@ export const Guardians = () => {
       display: "flex",
       alignItems: "flex-start",
       justifyContent: "space-between",
-      px: 3,
-      pt: 2.5,
-      pb: 2,
+      px: 5,
+      pt: 4,
+      pb: 3,
       borderBottom: "1px solid #F0EBE6"
     }}
   >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box
     sx={{
-      width: 40,
-      height: 40,
-      borderRadius: "10px",
+      width: 56,
+      height: 56,
+      borderRadius: "14px",
       backgroundColor: "#FFF2EC",
       display: "flex",
       alignItems: "center",
@@ -519,31 +520,31 @@ export const Guardians = () => {
       flexShrink: 0
     }}
   >
-              <LinkIcon sx={{ color: "#EC8D20", fontSize: 22 }} />
+              <LinkIcon sx={{ color: "#EC8D20", fontSize: 30 }} />
             </Box>
             <Box>
-              <Typography sx={{ fontWeight: 700, color: "text.primary", fontSize: "16px", lineHeight: 1.2 }}>
+              <Typography sx={{ fontWeight: 700, color: "text.primary", fontSize: "20px", lineHeight: 1.2 }}>
                 Link Senior to Guardian
               </Typography>
-              <Typography sx={{ color: "text.secondary", fontSize: "12px", mt: 0.3 }}>
+              <Typography sx={{ color: "text.secondary", fontSize: "14px", mt: 0.5 }}>
                 Select a Senior and a Guardian to create a mapping
               </Typography>
             </Box>
           </Box>
           <IconButton
     onClick={handleCloseLinkDialog}
-    size="small"
+    size="medium"
     sx={{ color: "text.secondary", "&:hover": { backgroundColor: "rgba(0,0,0,0.05)" } }}
   >
-            <CloseIcon sx={{ fontSize: 18 }} />
+            <CloseIcon sx={{ fontSize: 22 }} />
           </IconButton>
         </Box>
 
-        <DialogContent sx={{ px: 3, pt: 3, pb: 2 }}>
+        <DialogContent sx={{ px: 5, pt: 5, pb: 4 }}>
           {
     /* Two-panel selector row */
   }
-          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 3 }}>
 
             {
     /* Left panel — SENIOR */
@@ -551,17 +552,17 @@ export const Guardians = () => {
             <Box
     sx={{
       flex: 1,
-      border: "1.5px solid #EAE5E0",
-      borderRadius: "10px",
-      p: 2,
+      border: "2px solid #EAE5E0",
+      borderRadius: "14px",
+      p: 3,
       backgroundColor: "#FAFAFA",
       transition: "border-color 0.2s",
       ...selectedSeniorId && { borderColor: "#EC8D20" }
     }}
   >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.5 }}>
-                <PersonIcon sx={{ fontSize: 16, color: "#EC8D20" }} />
-                <Typography sx={{ fontSize: "11px", fontWeight: 800, color: "text.secondary", letterSpacing: "0.8px" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <PersonIcon sx={{ fontSize: 20, color: "#EC8D20" }} />
+                <Typography sx={{ fontSize: "13px", fontWeight: 800, color: "text.secondary", letterSpacing: "1px" }}>
                   SENIOR
                 </Typography>
               </Box>
@@ -608,12 +609,12 @@ export const Guardians = () => {
                   );
                 }}
               />
-              {selectedSenior && <Box sx={{ mt: 1.25, display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <Avatar sx={{ bgcolor: "#EC8D20", width: 22, height: 22, fontSize: "10px", fontWeight: 700 }}>
+              {selectedSenior && <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1.25 }}>
+                  <Avatar sx={{ bgcolor: "#EC8D20", width: 32, height: 32, fontSize: "13px", fontWeight: 700 }}>
                     {selectedSenior.name[0]}
                   </Avatar>
-                  <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
-                    {selectedSenior.email}
+                  <Typography sx={{ fontSize: "13px", color: "text.secondary", fontWeight: 500 }}>
+                    {selectedSenior.phone && selectedSenior.phone !== '—' ? selectedSenior.phone : selectedSenior.email}
                   </Typography>
                 </Box>}
             </Box>
@@ -623,9 +624,9 @@ export const Guardians = () => {
   }
             <Box
     sx={{
-      width: 34,
-      height: 34,
-      mt: 4.5,
+      width: 48,
+      height: 48,
+      mt: 5,
       borderRadius: "50%",
       backgroundColor: canCreate ? "#EC8D20" : "#FFF2EC",
       display: "flex",
@@ -635,7 +636,7 @@ export const Guardians = () => {
       transition: "background-color 0.3s"
     }}
   >
-              <ArrowForwardIcon sx={{ fontSize: 16, color: canCreate ? "#FFFFFF" : "#EC8D20" }} />
+              <ArrowForwardIcon sx={{ fontSize: 22, color: canCreate ? "#FFFFFF" : "#EC8D20" }} />
             </Box>
 
             {
@@ -644,18 +645,18 @@ export const Guardians = () => {
             <Box
     sx={{
       flex: 1,
-      border: "1.5px solid #EAE5E0",
-      borderRadius: "10px",
-      p: 2,
+      border: "2px solid #EAE5E0",
+      borderRadius: "14px",
+      p: 3,
       backgroundColor: selectedSeniorId ? "#FAFAFA" : "#F5F3F2",
       opacity: selectedSeniorId ? 1 : 0.6,
       transition: "opacity 0.2s, background-color 0.2s, border-color 0.2s",
       ...selectedGuardianId && { borderColor: "#EC8D20" }
     }}
   >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.5 }}>
-                <PeopleAltIcon sx={{ fontSize: 16, color: "#EC8D20" }} />
-                <Typography sx={{ fontSize: "11px", fontWeight: 800, color: "text.secondary", letterSpacing: "0.8px" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <PeopleAltIcon sx={{ fontSize: 20, color: "#EC8D20" }} />
+                <Typography sx={{ fontSize: "13px", fontWeight: 800, color: "text.secondary", letterSpacing: "1px" }}>
                   GUARDIAN
                 </Typography>
               </Box>
@@ -702,19 +703,19 @@ export const Guardians = () => {
                   );
                 }}
               />
-              {selectedGuardian && <Box sx={{ mt: 1.25, display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <Avatar sx={{ bgcolor: "#EC8D20", width: 22, height: 22, fontSize: "10px", fontWeight: 700 }}>
+              {selectedGuardian && <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1.25 }}>
+                  <Avatar sx={{ bgcolor: "#EC8D20", width: 32, height: 32, fontSize: "13px", fontWeight: 700 }}>
                     {selectedGuardian.name[0]}
                   </Avatar>
-                  <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
-                    {selectedGuardian.email}
+                  <Typography sx={{ fontSize: "13px", color: "text.secondary", fontWeight: 500 }}>
+                    {selectedGuardian.phone && selectedGuardian.phone !== '—' ? selectedGuardian.phone : selectedGuardian.email}
                   </Typography>
                 </Box>}
             </Box>
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3, pt: 1, gap: 1 }}>
+        <DialogActions sx={{ px: 5, pb: 4, pt: 2, gap: 1.5 }}>
           <Button
     onClick={handleCloseLinkDialog}
     sx={{

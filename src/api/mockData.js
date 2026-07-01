@@ -24,6 +24,7 @@ let mockUsers = [
   { id: "5", role: "GUARDIAN", firstName: "Suresh", lastName: "Rajan", username: "suresh.r", userName: "suresh.r", primaryEmail: "suresh.rajan@gmail.com", email: "suresh.rajan@gmail.com", phoneNumber: "9840067890", status: "ACTIVE", active: true }
 ];
 
+
 let mockSeniors = [
   {
     id: "MR",
@@ -474,6 +475,12 @@ export function handleMockRequest(path, options) {
           return;
         }
 
+        // --- ALL DEVICES ---
+        if (path === "/v1/admin/devices") {
+          resolve(mockDeviceLocations.map(r => r.device));
+          return;
+        }
+
         // --- DEVICES BY TYPE ---
         if (path.startsWith("/v1/admin/devices/")) {
           const type = decodeURIComponent(path.split("/").pop());
@@ -482,6 +489,7 @@ export function handleMockRequest(path, options) {
             .filter(d => type ? d.deviceType === type : true));
           return;
         }
+
 
         // Default fallback response
         resolve({ success: true });
