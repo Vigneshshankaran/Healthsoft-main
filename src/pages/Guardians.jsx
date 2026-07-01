@@ -708,7 +708,7 @@ export const Guardians = () => {
                     {selectedGuardian.name[0]}
                   </Avatar>
                   <Typography sx={{ fontSize: "13px", color: "text.secondary", fontWeight: 500 }}>
-                    {selectedGuardian.phone && selectedGuardian.phone !== '—' ? selectedGuardian.phone : selectedGuardian.email}
+                    {selectedGuardian.email && selectedGuardian.email !== '—' ? selectedGuardian.email : selectedGuardian.phone}
                   </Typography>
                 </Box>}
             </Box>
